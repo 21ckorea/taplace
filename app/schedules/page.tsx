@@ -193,7 +193,8 @@ export default function SchedulesPage() {
             defaultView="day" // 기본 뷰를 day로 설정
             views={['day']} // day 뷰만 표시
             date={selectedDate} // 현재 선택된 날짜로 달력의 날짜 설정
-            onNavigate={(newDate) => setSelectedDate(newDate)} // 날짜 변경 시 setSelectedDate 직접 호출
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            onNavigate={(newDate: Date, view?: View, action?: NavigateAction) => setSelectedDate(newDate)} // 날짜 변경 시 setSelectedDate 직접 호출
             culture="ko"
             messages={{
               next: '다음',
