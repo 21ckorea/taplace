@@ -151,7 +151,6 @@ export default function RoomDetailPage() {
       const startDateTime = setMinutes(setHours(parseISO(reservationDate), parseInt(reservationStartTime.split(':')[0])), parseInt(reservationStartTime.split(':')[1]))
       const endDateTime = setMinutes(setHours(parseISO(reservationDate), parseInt(reservationEndTime.split(':')[0])), parseInt(reservationEndTime.split(':')[1]))
 
-      const now = new Date();
       // 예약 시작 시간이 현재 시간 이전인지 확인
       if (isToday(startDateTime) && isPast(startDateTime)) {
         setSubmitMessage('예약 시작 시간은 현재 시간 이후여야 합니다.');
