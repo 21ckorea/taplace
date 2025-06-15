@@ -1,0 +1,214 @@
+'use client'
+
+import { createClient } from '@/lib/supabase/client'
+import { useState, useEffect } from 'react'
+import { Calendar, dateFnsLocalizer, Event } from 'react-big-calendar'
+import { format, parse, startOfWeek, getDay, startOfDay, endOfDay, addDays, subDays } from 'date-fns'
+import { ko } from 'date-fns/locale'
+import 'react-big-calendar/lib/css/react-big-calendar.css'
+import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
+import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop'
+
+// date-fns 로컬라이저 설정
+const locales = {
+  'ko': ko,
+}
+
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek,
+  getDay,
+  locales,
+})
+
+const DragAndDropCalendar = withDragAndDrop<CalendarEvent, Resource>(Calendar)
+
+interface Room {
+  id: string;
+  name: string;
+  capacity: number;
+  facilities: string[];
+}
+
+interface Reservation {
+  id: string;
+  room_id: string;
+  title: string;
+  start_time: string;
+  end_time: string;
+  attendees: string[];
+  room?: Room;
+}
+
+interface CalendarEvent {
+  id: string;
+  title: string;
+  start: Date;
+  end: Date;
+  allDay?: boolean;
+  resourceId?: string; // resourceId 추가
+}
+
+interface Resource {
+  id: string;
+  title: string;
+}
+
+export default function SchedulesPage() {
+  const [events, setEvents] = useState<CalendarEvent[]>([])
+  const [rooms, setRooms] = useState<Room[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedDate, setSelectedDate] = useState(new Date()) // 선택된 날짜 상태 추가
+  const supabase = createClient()
+
+  useEffect(() => {
+    async function fetchAllRoomsAndReservations() {
+      setLoading(true)
+      setError(null)
+      try {
+        // 모든 회의실 정보 가져오기
+        const { data: roomsData, error: roomsError } = await supabase
+          .from('rooms')
+          .select('id, name, capacity, facilities')
+          .order('capacity', { ascending: false })
+
+        if (roomsError) {
+          throw new Error(roomsError.message)
+        }
+        setRooms(roomsData as Room[])
+
+        // 선택된 날짜의 예약 정보 가져오기
+        const startOfSelectedDay = format(startOfDay(selectedDate), "yyyy-MM-dd'T'HH:mm:ssXXX");
+        const endOfSelectedDay = format(endOfDay(selectedDate), "yyyy-MM-dd'T'HH:mm:ssXXX");
+
+        const { data: reservationsData, error: reservationsError } = await supabase
+          .from('reservations')
+          .select('*, rooms(id, name, capacity, facilities)')
+          .gte('start_time', startOfSelectedDay)
+          .lt('start_time', endOfSelectedDay) // start_time이 선택된 날짜 안에 있는 것만 가져옵니다.
+          .order('start_time', { ascending: true })
+
+        if (reservationsError) {
+          throw new Error(reservationsError.message)
+        }
+
+        const formattedEvents: CalendarEvent[] = (reservationsData as Reservation[]).map(res => ({
+          id: res.id,
+          title: `${res.room?.name ? `[${res.room.name}] ` : ''}${res.title}`,
+          start: new Date(res.start_time),
+          end: new Date(res.end_time),
+          allDay: false,
+          resourceId: res.room_id, // resourceId 추가
+        }));
+
+        setEvents(formattedEvents)
+
+      } catch (err: any) {
+        setError(`데이터를 불러오는 중 오류가 발생했습니다: ${err.message}`)
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAllRoomsAndReservations()
+  }, [selectedDate]) // selectedDate가 변경될 때마다 데이터를 다시 불러오도록 합니다.
+
+  const roomResources: Resource[] = rooms.map(room => ({
+    id: room.id,
+    title: room.name,
+  }));
+
+  const handleNavigate = (newDate: Date) => {
+    setSelectedDate(newDate);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-600">일정 로딩 중...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-red-500">오류: {error}</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">회의실 전체 일정</h1>
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="flex justify-between items-center mb-4">
+            <button
+              onClick={() => handleNavigate(subDays(selectedDate, 1))}
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            >
+              이전 날짜
+            </button>
+            <h2 className="text-xl font-semibold">
+              {format(selectedDate, 'yyyy년 MM월 dd일 (EEE)', { locale: ko })}
+            </h2>
+            <button
+              onClick={() => handleNavigate(addDays(selectedDate, 1))}
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            >
+              다음 날짜
+            </button>
+          </div>
+          <DragAndDropCalendar
+            localizer={localizer}
+            events={events}
+            resources={roomResources} // 리소스 추가
+            resourceIdAccessor={(resource: any) => resource.id} // 리소스 ID 접근자
+            resourceTitleAccessor={(resource: any) => resource.title} // 리소스 제목 접근자
+            startAccessor={(event: any) => event.start}
+            endAccessor={(event: any) => event.end}
+            min={new Date(new Date().setHours(8, 0, 0))}
+            max={new Date(new Date().setHours(19, 0, 0))}
+            style={{ height: 700 }}
+            selectable
+            resizable
+            defaultView="day" // 기본 뷰를 day로 설정
+            views={['day']} // day 뷰만 표시
+            defaultDate={selectedDate} // 현재 선택된 날짜로 달력의 날짜 설정
+            culture="ko"
+            messages={{
+              next: '다음',
+              previous: '이전',
+              today: '오늘',
+              month: '월',
+              week: '주',
+              day: '일',
+              date: '날짜',
+              time: '시간',
+              event: '이벤트',
+              allDay: '종일',
+              noEventsInRange: '해당 기간에 예약된 일정이 없습니다.',
+            }}
+            components={{
+              toolbar: () => null // 기본 툴바를 숨깁니다.
+            }}
+            onSelectEvent={(event: any) => alert(event.title)}
+            onSelectSlot={(slotInfo: any) => {
+              console.log('Selected slot:', slotInfo);
+            }}
+            onEventDrop={(args: any) => {
+              console.log('Event dropped:', args);
+            }}
+            onEventResize={(args: any) => {
+              console.log('Event resized:', args);
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}

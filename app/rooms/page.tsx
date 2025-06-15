@@ -1,11 +1,12 @@
-import { supabase } from '@/lib/supabase'
+import { createServerClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 
 async function getRooms() {
+  const supabase = createServerClient()
   const { data: rooms, error } = await supabase
     .from('rooms')
-    .select('*')
-    .order('name')
+    .select('*, facilities')
+    .order('capacity', { ascending: false })
   
   if (error) {
     console.error('Error fetching rooms:', error)
@@ -24,7 +25,7 @@ export default async function RoomsPage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-8">회의실 목록</h1>
         
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {rooms.map((room) => (
+          {rooms.map((room: any) => (
             <div
               key={room.id}
               className="bg-white overflow-hidden shadow rounded-lg"
@@ -34,6 +35,11 @@ export default async function RoomsPage() {
                 <p className="mt-1 text-sm text-gray-500">
                   수용 인원: {room.capacity}명
                 </p>
+                {room.facilities && room.facilities.length > 0 && (
+                  <p className="mt-1 text-sm text-gray-500">
+                    시설: {room.facilities.join(', ')}
+                  </p>
+                )}
                 <div className="mt-4">
                   <Link
                     href={`/rooms/${room.id}`}
