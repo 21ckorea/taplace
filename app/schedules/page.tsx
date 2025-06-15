@@ -43,7 +43,8 @@ interface RawReservationResponse {
 
 interface CalendarEvent {
   id: string;
-  title: string;
+  title: string; // Displayed title (e.g., "예약됨")
+  originalTitle: string; // Actual title
   start: Date;
   end: Date;
   allDay?: boolean;
@@ -95,7 +96,8 @@ export default function SchedulesPage() {
 
       const formattedEvents: CalendarEvent[] = (reservationsData as RawReservationResponse[]).map(res => ({
         id: res.id,
-        title: `${res.rooms?.name ? `[${res.rooms.name}] ` : ''}${res.title}`,
+        title: '예약됨',
+        originalTitle: `${res.rooms?.name ? `[${res.rooms.name}] ` : ''}${res.title}`,
         start: new Date(res.start_time),
         end: new Date(res.end_time),
         allDay: false,
@@ -203,7 +205,7 @@ export default function SchedulesPage() {
               toolbar: () => null // 기본 툴바를 숨깁니다.
             }}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            onSelectEvent={(event: any) => alert(event.title)}
+            onSelectEvent={(event: CalendarEvent) => alert(event.originalTitle)}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onSelectSlot={(slotInfo: any) => {
               console.log('Selected slot:', slotInfo);

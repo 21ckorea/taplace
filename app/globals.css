@@ -27,3 +27,13 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Ensure react-big-calendar text is visible */
+.rbc-header,
+.rbc-time-slot,
+.rbc-agenda-time,
+.rbc-day-slot .rbc-time-slot,
+.rbc-event-label,
+.rbc-event-content {
+  color: #000000 !important; /* Force black color */
+}
