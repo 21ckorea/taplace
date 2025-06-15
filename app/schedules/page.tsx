@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { useState, useEffect, useCallback } from 'react'
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar'
-import { format, parse, startOfWeek, getDay, startOfDay, endOfDay, addDays, subDays } from 'date-fns'
+import { format, parse, startOfWeek, getDay, startOfDay, endOfDay } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
@@ -155,10 +155,6 @@ export default function SchedulesPage() {
     id: room.id,
     title: room.name,
   }));
-
-  const handleNavigate = (newDate: Date) => {
-    setSelectedDate(newDate);
-  };
 
   if (loading) {
     return (

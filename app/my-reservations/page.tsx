@@ -13,8 +13,8 @@ interface RawReservationData {
   title: string;
   start_time: string;
   end_time: string;
-  rooms: Array<{ name: string; facilities?: string[] }> | null;
-  profiles: Array<{ full_name: string | null }> | null;
+  rooms: { name: string; facilities?: string[] } | null;
+  profiles: { full_name: string | null } | null;
 }
 
 interface Reservation {
@@ -100,8 +100,8 @@ export default function MyReservationsPage() {
         title: res.title,
         start_time: res.start_time,
         end_time: res.end_time,
-        rooms: res.rooms && res.rooms.length > 0 ? res.rooms[0] : null,
-        bookerName: res.profiles && res.profiles.length > 0 ? res.profiles[0].full_name : null,
+        rooms: res.rooms,
+        bookerName: res.profiles?.full_name || null,
       }));
 
       // Custom sorting logic
