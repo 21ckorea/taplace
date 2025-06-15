@@ -1,8 +1,8 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useState, useEffect } from 'react'
-import { Calendar, dateFnsLocalizer, Event } from 'react-big-calendar'
+import { useState, useEffect, useCallback } from 'react'
+import { Calendar, dateFnsLocalizer } from 'react-big-calendar'
 import { format, parse, startOfWeek, getDay, startOfDay, endOfDay, addDays, subDays } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
@@ -29,6 +29,16 @@ interface Room {
   name: string;
   capacity: number;
   facilities: string[];
+}
+
+interface RawReservationResponse {
+  id: string;
+  room_id: string;
+  title: string;
+  start_time: string;
+  end_time: string;
+  attendees: string[];
+  rooms: { id: string; name: string; capacity: number; facilities: string[] } | null;
 }
 
 interface Reservation {
@@ -63,58 +73,64 @@ export default function SchedulesPage() {
   const [selectedDate, setSelectedDate] = useState(new Date()) // 선택된 날짜 상태 추가
   const supabase = createClient()
 
-  useEffect(() => {
-    async function fetchAllRoomsAndReservations() {
-      setLoading(true)
-      setError(null)
-      try {
-        // 모든 회의실 정보 가져오기
-        const { data: roomsData, error: roomsError } = await supabase
-          .from('rooms')
-          .select('id, name, capacity, facilities')
-          .order('capacity', { ascending: false })
+  const fetchAllRoomsAndReservations = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      // 모든 회의실 정보 가져오기
+      const { data: roomsData, error: roomsError } = await supabase
+        .from('rooms')
+        .select('id, name, capacity, facilities')
+        .order('capacity', { ascending: false })
 
-        if (roomsError) {
-          throw new Error(roomsError.message)
-        }
-        setRooms(roomsData as Room[])
-
-        // 선택된 날짜의 예약 정보 가져오기
-        const startOfSelectedDay = format(startOfDay(selectedDate), "yyyy-MM-dd'T'HH:mm:ssXXX");
-        const endOfSelectedDay = format(endOfDay(selectedDate), "yyyy-MM-dd'T'HH:mm:ssXXX");
-
-        const { data: reservationsData, error: reservationsError } = await supabase
-          .from('reservations')
-          .select('*, rooms(id, name, capacity, facilities)')
-          .gte('start_time', startOfSelectedDay)
-          .lt('start_time', endOfSelectedDay) // start_time이 선택된 날짜 안에 있는 것만 가져옵니다.
-          .order('start_time', { ascending: true })
-
-        if (reservationsError) {
-          throw new Error(reservationsError.message)
-        }
-
-        const formattedEvents: CalendarEvent[] = (reservationsData as Reservation[]).map(res => ({
-          id: res.id,
-          title: `${res.room?.name ? `[${res.room.name}] ` : ''}${res.title}`,
-          start: new Date(res.start_time),
-          end: new Date(res.end_time),
-          allDay: false,
-          resourceId: res.room_id, // resourceId 추가
-        }));
-
-        setEvents(formattedEvents)
-
-      } catch (err: any) {
-        setError(`데이터를 불러오는 중 오류가 발생했습니다: ${err.message}`)
-        console.error(err)
-      } finally {
-        setLoading(false)
+      if (roomsError) {
+        throw new Error(roomsError.message)
       }
-    }
+      setRooms(roomsData as Room[])
 
+      // 선택된 날짜의 예약 정보 가져오기
+      const startOfSelectedDay = format(startOfDay(selectedDate), "yyyy-MM-dd'T'HH:mm:ssXXX");
+      const endOfSelectedDay = format(endOfDay(selectedDate), "yyyy-MM-dd'T'HH:mm:ssXXX");
+
+      const { data: reservationsData, error: reservationsError } = await supabase
+        .from('reservations')
+        .select('*, rooms(id, name, capacity, facilities)')
+        .gte('start_time', startOfSelectedDay)
+        .lt('start_time', endOfSelectedDay) // start_time이 선택된 날짜 안에 있는 것만 가져옵니다.
+        .order('start_time', { ascending: true })
+
+      if (reservationsError) {
+        throw new Error(reservationsError.message)
+      }
+
+      const formattedEvents: CalendarEvent[] = (reservationsData as RawReservationResponse[]).map(res => ({
+        id: res.id,
+        title: `${res.rooms?.name ? `[${res.rooms.name}] ` : ''}${res.title}`,
+        start: new Date(res.start_time),
+        end: new Date(res.end_time),
+        allDay: false,
+        resourceId: res.room_id, // resourceId 추가
+      }));
+
+      setEvents(formattedEvents)
+
+    } catch (err: unknown) {
+      let message = '알 수 없는 오류가 발생했습니다.'
+      if (err instanceof Error) {
+        message = err.message
+      } else if (typeof err === 'object' && err !== null && 'message' in err) {
+        message = String((err as { message: unknown }).message)
+      }
+      setError(`데이터를 불러오는 중 오류가 발생했습니다: ${message}`)
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }, [selectedDate, setLoading, setError, setRooms, setEvents, supabase]) // Add all dependencies
+
+  useEffect(() => {
     fetchAllRoomsAndReservations()
-  }, [selectedDate]) // selectedDate가 변경될 때마다 데이터를 다시 불러오도록 합니다.
+  }, [fetchAllRoomsAndReservations])
 
   const roomResources: Resource[] = rooms.map(room => ({
     id: room.id,
@@ -167,10 +183,10 @@ export default function SchedulesPage() {
             localizer={localizer}
             events={events}
             resources={roomResources} // 리소스 추가
-            resourceIdAccessor={(resource: any) => resource.id} // 리소스 ID 접근자
-            resourceTitleAccessor={(resource: any) => resource.title} // 리소스 제목 접근자
-            startAccessor={(event: any) => event.start}
-            endAccessor={(event: any) => event.end}
+            resourceIdAccessor={(resource: Resource) => resource.id} // 리소스 ID 접근자
+            resourceTitleAccessor={(resource: Resource) => resource.title} // 리소스 제목 접근자
+            startAccessor={(event: CalendarEvent) => event.start}
+            endAccessor={(event: CalendarEvent) => event.end}
             min={new Date(new Date().setHours(8, 0, 0))}
             max={new Date(new Date().setHours(19, 0, 0))}
             style={{ height: 700 }}
@@ -196,13 +212,17 @@ export default function SchedulesPage() {
             components={{
               toolbar: () => null // 기본 툴바를 숨깁니다.
             }}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onSelectEvent={(event: any) => alert(event.title)}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onSelectSlot={(slotInfo: any) => {
               console.log('Selected slot:', slotInfo);
             }}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onEventDrop={(args: any) => {
               console.log('Event dropped:', args);
             }}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onEventResize={(args: any) => {
               console.log('Event resized:', args);
             }}

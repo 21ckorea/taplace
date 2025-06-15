@@ -5,13 +5,24 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { format, parseISO } from 'date-fns'
 
+interface RawReservationData {
+  id: string;
+  room_id: string;
+  title: string;
+  start_time: string;
+  end_time: string;
+  rooms: Array<{ name: string; facilities?: string[] }> | null;
+  profiles: { full_name: string | null } | null;
+}
+
 interface Reservation {
   id: string;
   room_id: string;
   title: string;
   start_time: string;
   end_time: string;
-  rooms: { name: string; facilities?: string[] } | null; // facilities 추가
+  rooms: { name: string; facilities?: string[] } | null;
+  bookerName?: string;
 }
 
 export default function MyReservationsPage() {
@@ -74,7 +85,8 @@ export default function MyReservationsPage() {
           title,
           start_time,
           end_time,
-          rooms ( name, facilities ) // facilities 추가
+          rooms ( name, facilities ),
+          profiles ( full_name )
         `)
         .eq('user_id', user.id)
         .order('start_time', { ascending: false })
@@ -83,33 +95,37 @@ export default function MyReservationsPage() {
         throw new Error(fetchError.message)
       }
 
-      const sortedReservations: Reservation[] = (reservationsData as unknown as Reservation[]);
+      const formattedReservations: Reservation[] = (reservationsData as unknown as RawReservationData[]).map(res => ({
+        id: res.id,
+        room_id: res.room_id,
+        title: res.title,
+        start_time: res.start_time,
+        end_time: res.end_time,
+        rooms: res.rooms && res.rooms.length > 0 ? { name: res.rooms[0].name, facilities: res.rooms[0].facilities } : null,
+        bookerName: res.profiles?.full_name || '알 수 없음',
+      }));
 
       // Custom sorting logic
-      sortedReservations.sort((a, b) => {
+      formattedReservations.sort((a, b) => {
         const nameA = a.rooms?.name || '';
         const nameB = b.rooms?.name || '';
 
         const indexA = roomOrder.indexOf(nameA);
         const indexB = roomOrder.indexOf(nameB);
 
-        // If both are in the custom order, sort by their index
         if (indexA !== -1 && indexB !== -1) {
           return indexA - indexB;
         }
-        // If only A is in the custom order, A comes first
         if (indexA !== -1) {
           return -1;
         }
-        // If only B is in the custom order, B comes first
         if (indexB !== -1) {
           return 1;
         }
-        // If neither are in the custom order, sort alphabetically by name
         return nameA.localeCompare(nameB);
       });
 
-      setReservations(sortedReservations)
+      setReservations(formattedReservations)
 
     } catch (err: unknown) {
       let message = '알 수 없는 오류가 발생했습니다.'

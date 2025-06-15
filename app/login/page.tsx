@@ -23,7 +23,13 @@ export default function LoginPage() {
       password,
     })
     if (error) {
-      setMessage(error.message)
+      let errorMessage = '알 수 없는 오류가 발생했습니다.'
+      if (error instanceof Error) {
+        errorMessage = error.message
+      } else if (typeof error === 'object' && error !== null && 'message' in error) {
+        errorMessage = String((error as { message: unknown }).message)
+      }
+      setMessage(errorMessage)
     } else {
       setMessage('로그인 성공!')
       const redirectTo = searchParams.get('redirect_to') || '/'
@@ -46,7 +52,13 @@ export default function LoginPage() {
       },
     })
     if (error) {
-      setMessage(error.message)
+      let errorMessage = '알 수 없는 오류가 발생했습니다.'
+      if (error instanceof Error) {
+        errorMessage = error.message
+      } else if (typeof error === 'object' && error !== null && 'message' in error) {
+        errorMessage = String((error as { message: unknown }).message)
+      }
+      setMessage(errorMessage)
     } else {
       setMessage('회원가입 성공! 이메일을 확인하여 계정을 활성화하세요.')
     }

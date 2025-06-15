@@ -14,6 +14,17 @@ interface Room {
   facilities: string[];
 }
 
+interface RawReservationResponse {
+  id: string;
+  room_id: string;
+  title: string;
+  start_time: string;
+  end_time: string;
+  attendees: string[];
+  profiles: { full_name: string | null } | null;
+  user_id: string;
+}
+
 interface Reservation {
   id: string;
   room_id: string;
@@ -26,7 +37,7 @@ interface Reservation {
 }
 
 export default function RoomDetailPage() {
-  const router = useRouter()
+  // const router = useRouter() // Removed as it's unused
   const { id: roomId } = useParams() as { id: string }
   const [room, setRoom] = useState<Room | null>(null)
   const [reservations, setReservations] = useState<Reservation[]>([])
@@ -82,10 +93,16 @@ export default function RoomDetailPage() {
         if (reservationsError) {
           throw new Error(reservationsError.message)
         }
-        const formattedReservations = reservationsData.map((res: any) => ({
-          ...res,
+        const formattedReservations: Reservation[] = (reservationsData as RawReservationResponse[]).map(res => ({
+          id: res.id,
+          room_id: res.room_id,
+          user_id: res.user_id,
+          title: res.title,
+          start_time: res.start_time,
+          end_time: res.end_time,
+          attendees: res.attendees,
           bookerName: res.profiles?.full_name || '알 수 없음',
-        })) as Reservation[]; // Explicitly cast to Reservation[]
+        }));
         console.log("Formatted Reservations:", formattedReservations);
         setReservations(formattedReservations)
 

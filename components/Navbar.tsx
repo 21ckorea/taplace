@@ -1,6 +1,7 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
+import { User } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -10,7 +11,7 @@ export default function Navbar() {
   const supabase = createClient()
   const router = useRouter()
   const { showNotification } = useNotification()
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -35,7 +36,13 @@ export default function Navbar() {
     setLoading(true)
     const { error } = await supabase.auth.signOut()
     if (error) {
-      showNotification(`로그아웃 실패: ${error.message}`, 'error')
+      let errorMessage = '알 수 없는 오류가 발생했습니다.'
+      if (error instanceof Error) {
+        errorMessage = error.message
+      } else if (typeof error === 'object' && error !== null && 'message' in error) {
+        errorMessage = String((error as { message: unknown }).message)
+      }
+      showNotification(`로그아웃 실패: ${errorMessage}`, 'error')
     } else {
       showNotification('로그아웃 성공!', 'success')
       router.push('/login')

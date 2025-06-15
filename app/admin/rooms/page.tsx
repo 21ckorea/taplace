@@ -35,8 +35,14 @@ export default function AdminRoomsPage() {
         throw new Error(fetchError.message)
       }
       setRooms(roomsData)
-    } catch (err: any) {
-      setError(`회의실 목록을 불러오는 중 오류가 발생했습니다: ${err.message}`)
+    } catch (err: unknown) {
+      let message = '알 수 없는 오류가 발생했습니다.'
+      if (err instanceof Error) {
+        message = err.message
+      } else if (typeof err === 'object' && err !== null && 'message' in err) {
+        message = String((err as { message: unknown }).message)
+      }
+      setError(`회의실 목록을 불러오는 중 오류가 발생했습니다: ${message}`)
       console.error(err)
     } finally {
       setLoading(false)
@@ -78,8 +84,14 @@ export default function AdminRoomsPage() {
       setNewRoomFacilities('')
       await fetchRooms()
       alert('회의실이 성공적으로 생성되었습니다.')
-    } catch (err: any) {
-      setError(`회의실 생성 중 오류가 발생했습니다: ${err.message}`)
+    } catch (err: unknown) {
+      let message = '알 수 없는 오류가 발생했습니다.'
+      if (err instanceof Error) {
+        message = err.message
+      } else if (typeof err === 'object' && err !== null && 'message' in err) {
+        message = String((err as { message: unknown }).message)
+      }
+      setError(`회의실 생성 중 오류가 발생했습니다: ${message}`)
       console.error(err)
     } finally {
       setIsSubmitting(false)
@@ -126,8 +138,14 @@ export default function AdminRoomsPage() {
       setNewRoomFacilities('')
       await fetchRooms()
       alert('회의실이 성공적으로 업데이트되었습니다.')
-    } catch (err: any) {
-      setError(`회의실 업데이트 중 오류가 발생했습니다: ${err.message}`)
+    } catch (err: unknown) {
+      let message = '알 수 없는 오류가 발생했습니다.'
+      if (err instanceof Error) {
+        message = err.message
+      } else if (typeof err === 'object' && err !== null && 'message' in err) {
+        message = String((err as { message: unknown }).message)
+      }
+      setError(`회의실 업데이트 중 오류가 발생했습니다: ${message}`)
       console.error(err)
     } finally {
       setIsSubmitting(false)
@@ -151,8 +169,14 @@ export default function AdminRoomsPage() {
 
       await fetchRooms()
       alert('회의실이 성공적으로 삭제되었습니다.')
-    } catch (err: any) {
-      setError(`회의실 삭제 중 오류가 발생했습니다: ${err.message}`)
+    } catch (err: unknown) {
+      let message = '알 수 없는 오류가 발생했습니다.'
+      if (err instanceof Error) {
+        message = err.message
+      } else if (typeof err === 'object' && err !== null && 'message' in err) {
+        message = String((err as { message: unknown }).message)
+      }
+      setError(`회의실 삭제 중 오류가 발생했습니다: ${message}`)
       console.error(err)
     }
   }
