@@ -9,6 +9,8 @@ import 'react-big-calendar/lib/css/react-big-calendar.css'
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop'
 
+// 이 주석은 Vercel 배포 테스트를 위해 추가되었습니다.
+
 // Custom Toolbar Component
 interface CustomToolbarProps {
   label: string;
