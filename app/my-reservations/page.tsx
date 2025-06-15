@@ -1,7 +1,7 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { format, parseISO } from 'date-fns'
 
@@ -42,80 +42,92 @@ export default function MyReservationsPage() {
         prevReservations.filter(res => res.id !== reservationId)
       )
       alert('예약이 성공적으로 취소되었습니다.')
-    } catch (err: any) {
-      alert(`예약 취소 중 오류가 발생했습니다: ${err.message}`)
+    } catch (err: unknown) {
+      let message = '알 수 없는 오류가 발생했습니다.'
+      if (err instanceof Error) {
+        message = err.message
+      } else if (typeof err === 'object' && err !== null && 'message' in err) {
+        message = String((err as { message: unknown }).message)
+      }
+      alert(`예약 취소 중 오류가 발생했습니다: ${message}`)
       console.error(err)
     }
   }
 
-  useEffect(() => {
-    async function fetchReservations() {
-      setLoading(true)
-      setError(null)
-      try {
-        const { data: { user } } = await supabase.auth.getUser()
+  const fetchReservations = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
 
-        if (!user) {
-          setError('로그인이 필요합니다.')
-          setLoading(false)
-          return
-        }
-
-        const { data: reservationsData, error: fetchError } = await supabase
-          .from('reservations')
-          .select(`
-            id,
-            room_id,
-            title,
-            start_time,
-            end_time,
-            rooms ( name, facilities ) // facilities 추가
-          `)
-          .eq('user_id', user.id)
-          .order('start_time', { ascending: false })
-
-        if (fetchError) {
-          throw new Error(fetchError.message)
-        }
-
-        let sortedReservations = (reservationsData as unknown as Reservation[]);
-
-        // Custom sorting logic
-        sortedReservations.sort((a, b) => {
-          const nameA = a.rooms?.name || '';
-          const nameB = b.rooms?.name || '';
-
-          const indexA = roomOrder.indexOf(nameA);
-          const indexB = roomOrder.indexOf(nameB);
-
-          // If both are in the custom order, sort by their index
-          if (indexA !== -1 && indexB !== -1) {
-            return indexA - indexB;
-          }
-          // If only A is in the custom order, A comes first
-          if (indexA !== -1) {
-            return -1;
-          }
-          // If only B is in the custom order, B comes first
-          if (indexB !== -1) {
-            return 1;
-          }
-          // If neither are in the custom order, sort alphabetically by name
-          return nameA.localeCompare(nameB);
-        });
-
-        setReservations(sortedReservations)
-
-      } catch (err: any) {
-        setError(`예약 내역을 불러오는 중 오류가 발생했습니다: ${err.message}`)
-        console.error(err)
-      } finally {
+      if (!user) {
+        setError('로그인이 필요합니다.')
         setLoading(false)
+        return
       }
-    }
 
+      const { data: reservationsData, error: fetchError } = await supabase
+        .from('reservations')
+        .select(`
+          id,
+          room_id,
+          title,
+          start_time,
+          end_time,
+          rooms ( name, facilities ) // facilities 추가
+        `)
+        .eq('user_id', user.id)
+        .order('start_time', { ascending: false })
+
+      if (fetchError) {
+        throw new Error(fetchError.message)
+      }
+
+      const sortedReservations: Reservation[] = (reservationsData as unknown as Reservation[]);
+
+      // Custom sorting logic
+      sortedReservations.sort((a, b) => {
+        const nameA = a.rooms?.name || '';
+        const nameB = b.rooms?.name || '';
+
+        const indexA = roomOrder.indexOf(nameA);
+        const indexB = roomOrder.indexOf(nameB);
+
+        // If both are in the custom order, sort by their index
+        if (indexA !== -1 && indexB !== -1) {
+          return indexA - indexB;
+        }
+        // If only A is in the custom order, A comes first
+        if (indexA !== -1) {
+          return -1;
+        }
+        // If only B is in the custom order, B comes first
+        if (indexB !== -1) {
+          return 1;
+        }
+        // If neither are in the custom order, sort alphabetically by name
+        return nameA.localeCompare(nameB);
+      });
+
+      setReservations(sortedReservations)
+
+    } catch (err: unknown) {
+      let message = '알 수 없는 오류가 발생했습니다.'
+      if (err instanceof Error) {
+        message = err.message
+      } else if (typeof err === 'object' && err !== null && 'message' in err) {
+        message = String((err as { message: unknown }).message)
+      }
+      setError(`예약 내역을 불러오는 중 오류가 발생했습니다: ${message}`)
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }, [setLoading, setError, setReservations, supabase, roomOrder])
+
+  useEffect(() => {
     fetchReservations()
-  }, [])
+  }, [fetchReservations])
 
   if (loading) {
     return (

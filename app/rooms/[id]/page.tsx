@@ -5,7 +5,7 @@ import { SupabaseClient } from '@supabase/supabase-js'
 import { format, parseISO, startOfDay, endOfDay, setHours, setMinutes, addMinutes, isToday, isPast } from 'date-fns'
 import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { CalendarIcon, ClockIcon, UsersIcon } from '@heroicons/react/24/outline'
+// import { CalendarIcon, ClockIcon, UsersIcon } from '@heroicons/react/24/outline' // Removed unused imports
 
 interface Room {
   id: string;
@@ -17,12 +17,12 @@ interface Room {
 interface Reservation {
   id: string;
   room_id: string;
-  user_id: string; // auth.users(id)에 연결
+  user_id: string;
   title: string;
   start_time: string;
   end_time: string;
   attendees: string[];
-  bookerName?: string; // 예약자 이름 필드 추가
+  bookerName?: string;
 }
 
 export default function RoomDetailPage() {
@@ -65,7 +65,7 @@ export default function RoomDetailPage() {
         if (roomError) {
           throw new Error(roomError.message)
         }
-        setRoom(roomData)
+        setRoom(roomData as Room)
 
         // 해당 날짜의 예약 정보 가져오기
         const start = format(startOfDay(parseISO(reservationDate)), 'yyyy-MM-dd HH:mm:ssXXX')
@@ -85,12 +85,18 @@ export default function RoomDetailPage() {
         const formattedReservations = reservationsData.map((res: any) => ({
           ...res,
           bookerName: res.profiles?.full_name || '알 수 없음',
-        }));
+        })) as Reservation[]; // Explicitly cast to Reservation[]
         console.log("Formatted Reservations:", formattedReservations);
         setReservations(formattedReservations)
 
-      } catch (err: any) {
-        setError(`데이터를 불러오는 중 오류가 발생했습니다: ${err.message}`)
+      } catch (err: unknown) {
+        let message = '알 수 없는 오류가 발생했습니다.'
+        if (err instanceof Error) {
+          message = err.message
+        } else if (typeof err === 'object' && err !== null && 'message' in err) {
+          message = String((err as { message: unknown }).message)
+        }
+        setError(`데이터를 불러오는 중 오류가 발생했습니다: ${message}`)
         console.error(err)
       } finally {
         setLoading(false)
@@ -100,7 +106,7 @@ export default function RoomDetailPage() {
     if (roomId) {
       fetchRoomAndReservations()
     }
-  }, [roomId, reservationDate]) // reservationDate가 변경될 때마다 예약 정보 다시 로드
+  }, [roomId, reservationDate, supabase]) // Added supabase to dependency array
 
   const handleReservationSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -179,13 +185,13 @@ export default function RoomDetailPage() {
         attendees: attendees.split(',').map(s => s.trim()),
       };
 
-      const { data, error } = await supabase
+      const { data: _data, error: insertError } = await supabase // Renamed data to _data
         .from('reservations')
         .insert(newReservation)
         .select()
 
-      if (error) {
-        throw new Error(error.message)
+      if (insertError) { // Changed error to insertError
+        throw new Error(insertError.message)
       }
 
       setSubmitMessage('예약이 성공적으로 완료되었습니다!')
@@ -203,10 +209,16 @@ export default function RoomDetailPage() {
         .order('start_time')
       
       if (updateError) throw new Error(updateError.message)
-      setReservations(updatedReservations)
+      setReservations(updatedReservations as Reservation[]) // Explicitly cast to Reservation[]
 
-    } catch (err: any) {
-      setSubmitMessage(`예약 중 오류가 발생했습니다: ${err.message}`)
+    } catch (err: unknown) {
+      let message = '알 수 없는 오류가 발생했습니다.'
+      if (err instanceof Error) {
+        message = err.message
+      } else if (typeof err === 'object' && err !== null && 'message' in err) {
+        message = String((err as { message: unknown }).message)
+      }
+      setSubmitMessage(`예약 중 오류가 발생했습니다: ${message}`)
       console.error(err)
     } finally {
       setIsSubmitting(false)

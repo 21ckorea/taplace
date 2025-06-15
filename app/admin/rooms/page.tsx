@@ -1,8 +1,7 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback } from 'react'
 
 interface Room {
   id: string;
@@ -22,17 +21,12 @@ export default function AdminRoomsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const supabase = createClient()
-  const router = useRouter()
 
-  useEffect(() => {
-    fetchRooms()
-  }, [])
-
-  async function fetchRooms() {
+  const fetchRooms = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const { data, error: fetchError } = await supabase
+      const { data: roomsData, error: fetchError } = await supabase
         .from('rooms')
         .select('*')
         .order('name', { ascending: true })
@@ -40,14 +34,18 @@ export default function AdminRoomsPage() {
       if (fetchError) {
         throw new Error(fetchError.message)
       }
-      setRooms(data as Room[])
+      setRooms(roomsData)
     } catch (err: any) {
       setError(`회의실 목록을 불러오는 중 오류가 발생했습니다: ${err.message}`)
       console.error(err)
     } finally {
       setLoading(false)
     }
-  }
+  }, [setLoading, setError, setRooms, supabase])
+
+  useEffect(() => {
+    fetchRooms()
+  }, [fetchRooms])
 
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -61,7 +59,7 @@ export default function AdminRoomsPage() {
     }
 
     try {
-      const { data, error: insertError } = await supabase
+      const { data: _data, error: insertError } = await supabase
         .from('rooms')
         .insert({
           name: newRoomName,
@@ -78,7 +76,7 @@ export default function AdminRoomsPage() {
       setNewRoomName('')
       setNewRoomCapacity('')
       setNewRoomFacilities('')
-      await fetchRooms() // 목록 새로고침
+      await fetchRooms()
       alert('회의실이 성공적으로 생성되었습니다.')
     } catch (err: any) {
       setError(`회의실 생성 중 오류가 발생했습니다: ${err.message}`)
@@ -107,7 +105,7 @@ export default function AdminRoomsPage() {
     }
 
     try {
-      const { data, error: updateError } = await supabase
+      const { data: _data, error: updateError } = await supabase
         .from('rooms')
         .update({
           name: newRoomName,
@@ -126,7 +124,7 @@ export default function AdminRoomsPage() {
       setNewRoomName('')
       setNewRoomCapacity('')
       setNewRoomFacilities('')
-      await fetchRooms() // 목록 새로고침
+      await fetchRooms()
       alert('회의실이 성공적으로 업데이트되었습니다.')
     } catch (err: any) {
       setError(`회의실 업데이트 중 오류가 발생했습니다: ${err.message}`)
@@ -151,7 +149,7 @@ export default function AdminRoomsPage() {
         throw new Error(deleteError.message)
       }
 
-      await fetchRooms() // 목록 새로고침
+      await fetchRooms()
       alert('회의실이 성공적으로 삭제되었습니다.')
     } catch (err: any) {
       setError(`회의실 삭제 중 오류가 발생했습니다: ${err.message}`)
@@ -216,7 +214,7 @@ export default function AdminRoomsPage() {
                 id="roomFacilities"
                 value={newRoomFacilities}
                 onChange={(e) => setNewRoomFacilities(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm"
                 placeholder="예: 프로젝터, 화이트보드, TV"
               />
             </div>
