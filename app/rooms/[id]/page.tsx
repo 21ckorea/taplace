@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { SupabaseClient } from '@supabase/supabase-js'
 import { format, parseISO, startOfDay, endOfDay, setHours, setMinutes, addMinutes, isToday, isPast } from 'date-fns'
 import React, { useState, useEffect } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useParams } from 'next/navigation'
 // import { CalendarIcon, ClockIcon, UsersIcon } from '@heroicons/react/24/outline' // Removed unused imports
 
 interface Room {
@@ -202,12 +202,12 @@ export default function RoomDetailPage() {
         attendees: attendees.split(',').map(s => s.trim()),
       };
 
-      const { data: _data, error: insertError } = await supabase // Renamed data to _data
+      const { error: insertError } = await supabase 
         .from('reservations')
         .insert(newReservation)
         .select()
 
-      if (insertError) { // Changed error to insertError
+      if (insertError) {
         throw new Error(insertError.message)
       }
 

@@ -41,16 +41,6 @@ interface RawReservationResponse {
   rooms: { id: string; name: string; capacity: number; facilities: string[] } | null;
 }
 
-interface Reservation {
-  id: string;
-  room_id: string;
-  title: string;
-  start_time: string;
-  end_time: string;
-  attendees: string[];
-  room?: Room;
-}
-
 interface CalendarEvent {
   id: string;
   title: string;

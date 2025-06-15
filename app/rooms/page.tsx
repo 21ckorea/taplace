@@ -1,6 +1,13 @@
 import { createServerClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 
+interface Room {
+  id: string;
+  name: string;
+  capacity: number;
+  facilities: string[];
+}
+
 async function getRooms() {
   const supabase = createServerClient()
   const { data: rooms, error } = await supabase
@@ -13,7 +20,7 @@ async function getRooms() {
     return []
   }
   
-  return rooms
+  return rooms as Room[]
 }
 
 export default async function RoomsPage() {
@@ -25,7 +32,7 @@ export default async function RoomsPage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-8">회의실 목록</h1>
         
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {rooms.map((room: any) => (
+          {rooms.map((room: Room) => (
             <div
               key={room.id}
               className="bg-white overflow-hidden shadow rounded-lg"

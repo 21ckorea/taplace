@@ -138,7 +138,7 @@ export default function MyReservationsPage() {
     } finally {
       setLoading(false)
     }
-  }, [setLoading, setError, setReservations, supabase, roomOrder])
+  }, [setLoading, setError, setReservations, supabase])
 
   useEffect(() => {
     fetchReservations()
