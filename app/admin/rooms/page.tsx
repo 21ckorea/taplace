@@ -65,7 +65,7 @@ export default function AdminRoomsPage() {
     }
 
     try {
-      const { data: _data, error: insertError } = await supabase
+      const { error: insertError } = await supabase
         .from('rooms')
         .insert({
           name: newRoomName,
@@ -117,7 +117,7 @@ export default function AdminRoomsPage() {
     }
 
     try {
-      const { data: _data, error: updateError } = await supabase
+      const { error: updateError } = await supabase
         .from('rooms')
         .update({
           name: newRoomName,

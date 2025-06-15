@@ -5,6 +5,8 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { format, parseISO } from 'date-fns'
 
+const roomOrder = ['대회의실', '1회의실', '2회의실'];
+
 interface RawReservationData {
   id: string;
   room_id: string;
@@ -30,9 +32,6 @@ export default function MyReservationsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
-
-  // Define the custom order for rooms
-  const roomOrder = ['대회의실', '1회의실', '2회의실'];
 
   const handleCancelReservation = async (reservationId: string) => {
     if (!confirm('정말로 이 예약을 취소하시겠습니까?')) {
