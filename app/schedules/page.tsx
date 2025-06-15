@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useState, useEffect, useCallback } from 'react'
-import { Calendar, dateFnsLocalizer } from 'react-big-calendar'
+import { Calendar, dateFnsLocalizer, View, NavigateAction } from 'react-big-calendar'
 import { format, parse, startOfWeek, getDay, startOfDay, endOfDay } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
@@ -156,6 +156,10 @@ export default function SchedulesPage() {
     title: room.name,
   }));
 
+  const handleCalendarNavigation = useCallback((newDate: Date, view?: View, action?: NavigateAction) => {
+    setSelectedDate(newDate);
+  }, [setSelectedDate]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -192,7 +196,8 @@ export default function SchedulesPage() {
             resizable
             defaultView="day" // 기본 뷰를 day로 설정
             views={['day']} // day 뷰만 표시
-            defaultDate={selectedDate} // 현재 선택된 날짜로 달력의 날짜 설정
+            date={selectedDate} // 현재 선택된 날짜로 달력의 날짜 설정
+            onNavigate={handleCalendarNavigation} // 날짜 변경 핸들러 추가
             culture="ko"
             messages={{
               next: '다음',
