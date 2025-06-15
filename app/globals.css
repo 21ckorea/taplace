@@ -33,7 +33,13 @@ body {
 .rbc-time-slot,
 .rbc-agenda-time,
 .rbc-day-slot .rbc-time-slot,
+.rbc-toolbar-label {
+  color: #000000 !important; /* Force black color */
+}
+
+/* Hide event content by default, but keep element in flow */
 .rbc-event-label,
 .rbc-event-content {
-  color: #000000 !important; /* Force black color */
+  opacity: 0 !important; /* Hide content visually */
+  pointer-events: none; /* Prevent interaction with hidden text */
 }

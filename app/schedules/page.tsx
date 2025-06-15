@@ -9,6 +9,33 @@ import 'react-big-calendar/lib/css/react-big-calendar.css'
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop'
 
+// Custom Toolbar Component
+interface CustomToolbarProps {
+  label: string;
+  onNavigate: (action: 'PREV' | 'NEXT' | 'TODAY') => void;
+  // Add other props if needed that are passed to the toolbar
+}
+
+const CustomToolbar: React.FC<CustomToolbarProps> = ({ label, onNavigate }) => {
+  return (
+    <div className="flex justify-between items-center mb-4">
+      <button
+        onClick={() => onNavigate('PREV')}
+        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+      >
+        이전 날짜
+      </button>
+      <h2 className="text-xl font-semibold text-black">{label}</h2>
+      <button
+        onClick={() => onNavigate('NEXT')}
+        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+      >
+        다음 날짜
+      </button>
+    </div>
+  );
+};
+
 // date-fns 로컬라이저 설정
 const locales = {
   'ko': ko,
@@ -154,23 +181,6 @@ export default function SchedulesPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">회의실 전체 일정</h1>
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="flex justify-between items-center mb-4">
-            <button
-              onClick={() => handleNavigate(subDays(selectedDate, 1))}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-            >
-              이전 날짜
-            </button>
-            <h2 className="text-xl font-semibold">
-              {format(selectedDate, 'yyyy년 MM월 dd일 (EEE)', { locale: ko })}
-            </h2>
-            <button
-              onClick={() => handleNavigate(addDays(selectedDate, 1))}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-            >
-              다음 날짜
-            </button>
-          </div>
           <DragAndDropCalendar
             localizer={localizer}
             events={events}
@@ -202,7 +212,7 @@ export default function SchedulesPage() {
               noEventsInRange: '해당 기간에 예약된 일정이 없습니다.',
             }}
             components={{
-              toolbar: () => null // 기본 툴바를 숨깁니다.
+              toolbar: CustomToolbar, // CustomToolbar를 사용하도록 변경
             }}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onSelectEvent={(event: CalendarEvent) => alert(event.originalTitle)}

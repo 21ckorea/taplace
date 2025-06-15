@@ -14,7 +14,7 @@ interface RawReservationData {
   start_time: string;
   end_time: string;
   rooms: Array<{ name: string; facilities?: string[] }> | null;
-  profiles: { full_name: string | null } | null;
+  profiles: Array<{ full_name: string | null }> | null;
 }
 
 interface Reservation {
@@ -24,7 +24,7 @@ interface Reservation {
   start_time: string;
   end_time: string;
   rooms: { name: string; facilities?: string[] } | null;
-  bookerName?: string;
+  bookerName: string | null;
 }
 
 export default function MyReservationsPage() {
@@ -100,8 +100,8 @@ export default function MyReservationsPage() {
         title: res.title,
         start_time: res.start_time,
         end_time: res.end_time,
-        rooms: res.rooms && res.rooms.length > 0 ? { name: res.rooms[0].name, facilities: res.rooms[0].facilities } : null,
-        bookerName: res.profiles?.full_name || '알 수 없음',
+        rooms: res.rooms && res.rooms.length > 0 ? res.rooms[0] : null,
+        bookerName: res.profiles && res.profiles.length > 0 ? res.profiles[0].full_name : null,
       }));
 
       // Custom sorting logic
@@ -208,4 +208,4 @@ export default function MyReservationsPage() {
       </div>
     </div>
   )
-} 
+}
