@@ -156,10 +156,6 @@ export default function SchedulesPage() {
     title: room.name,
   }));
 
-  const handleCalendarNavigation = useCallback((newDate: Date, view?: View, action?: NavigateAction) => {
-    setSelectedDate(newDate);
-  }, [setSelectedDate]);
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -197,7 +193,7 @@ export default function SchedulesPage() {
             defaultView="day" // 기본 뷰를 day로 설정
             views={['day']} // day 뷰만 표시
             date={selectedDate} // 현재 선택된 날짜로 달력의 날짜 설정
-            onNavigate={handleCalendarNavigation} // 날짜 변경 핸들러 추가
+            onNavigate={(newDate) => setSelectedDate(newDate)} // 날짜 변경 시 setSelectedDate 직접 호출
             culture="ko"
             messages={{
               next: '다음',
@@ -213,7 +209,7 @@ export default function SchedulesPage() {
               noEventsInRange: '해당 기간에 예약된 일정이 없습니다.',
             }}
             components={{
-              toolbar: CustomToolbar, // CustomToolbar를 사용하도록 변경
+              toolbar: CustomToolbar,
             }}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onSelectEvent={(event: CalendarEvent) => alert(event.originalTitle)}
